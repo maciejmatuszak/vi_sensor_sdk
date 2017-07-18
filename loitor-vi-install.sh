@@ -1,6 +1,6 @@
 create_udev_rules() {
 	echo "" > loitor-vi.rules
-	echo 'KERNEL=="*", SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ACTION=="add", ATTR{idVendor}=="04b4", SYMLINK+="LOITOR", MODE="666" ' >> loitor-vi.rules
+	echo 'KERNEL=="*", SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ACTION=="add", ATTR{idVendor}=="04b4", SYMLINK+="LOITOR", MODE="666", GROUP="dialout" ' >> loitor-vi.rules
 	echo 'KERNEL=="*", SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ACTION=="remove" ' >> loitor-vi.rules
 }
 

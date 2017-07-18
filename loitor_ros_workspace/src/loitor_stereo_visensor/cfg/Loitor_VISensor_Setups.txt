@@ -29,7 +29,7 @@ EG_mode
 manual,100,100
 auto,300,5,58
 autoexp_manualgain,300,5,58,100
-/dev/LOITOR,5
+/dev/ttyUSB0,5
 #
 #   339, -72, -1510
 # Gravity 16280

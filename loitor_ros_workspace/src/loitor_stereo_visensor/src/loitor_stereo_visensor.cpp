@@ -98,13 +98,18 @@ void* imu_data_stream(void *)
 
 int main(int argc, char **argv)
 { 
-	/************************ Start Cameras ************************/
+    ros::init(argc, argv, "loitor_stereo_visensor");
+
+    ros::NodeHandle local_nh("~");
     std::string settingPath = "src/loitor_stereo_visensor/Loitor_VISensor_Setups.txt";
+
+	/************************ Start Cameras ************************/
 
     if(argv[1])
     {
         settingPath = argv[1];
     }
+    local_nh.param<string> ("config_file", settingPath, settingPath);
 
     cout<<"Loading settings from  : "<< settingPath <<endl;
 
@@ -161,7 +166,6 @@ int main(int argc, char **argv)
 	if(temp = pthread_create(&imu_data_thread, NULL, imu_data_stream, NULL))
 	printf("Failed to create thread imu_data_stream\r\n");
 	
-	ros::init(argc, argv, "loitor_stereo_visensor");
 
 	ros::NodeHandle n;
 

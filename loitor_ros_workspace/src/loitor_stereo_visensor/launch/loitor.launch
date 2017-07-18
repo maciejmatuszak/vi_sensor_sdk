@@ -1,0 +1,8 @@
+<launch>
+    <arg name="config_path" default = "$(find loitor_stereo_visensor)/cfg/Loitor_VISensor_Setups.txt" />
+	
+    <node name="loitor_stereo_visensor" pkg="loitor_stereo_visensor" type="loitor_stereo_visensor" output="screen" args="/data/git/vi_sensor_sdk/loitor_ros_workspace/src/loitor_stereo_visensor/cfg/Loitor_VISensor_Setups.txt">
+       <param name="config_file" type="string" value="$(arg config_path)" />
+    </node>
+
+</launch>
