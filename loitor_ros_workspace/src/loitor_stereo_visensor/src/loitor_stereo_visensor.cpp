@@ -28,13 +28,13 @@ using namespace cv;
 ros::Publisher pub_imu;
 
 /*
-*  用于构造cv::Mat 的左右眼图像
+*  Used to construct the left and right eye images of cv :: Mat
 */
 cv::Mat img_left;
 cv::Mat img_right;
 
 /*
-*  当前左右图像的时间戳
+*  The current timestamp of the left and right images
 */
 timeval left_stamp,right_stamp;
 
@@ -55,18 +55,20 @@ void* imu_data_stream(void *)
 		if(visensor_imu_have_fresh_data())
            	{
 			counter++;
-			// 每隔20帧显示一次imu数据
-			if(counter>=20) 
+            // Display imu data every 20 frames
+            /**
+            if(counter>=20)
 			{
 				//cout<<"visensor_imudata_pack->a : "<<visensor_imudata_pack.ax<<" , "<<visensor_imudata_pack.ay<<" , "<<visensor_imudata_pack.az<<endl;
 				float ax=visensor_imudata_pack.ax;
 				float ay=visensor_imudata_pack.ay;
 				float az=visensor_imudata_pack.az;
-				//cout<<"visensor_imudata_pack->a : "<<sqrt(ax*ax+ay*ay+az*az)<<endl;
-				//cout<<"imu_time : "<<visensor_imudata_pack.imu_time<<endl;
-				//cout<<"imu_time : "<<visensor_imudata_pack.system_time.tv_usec<<endl;
+                cout<<"visensor_imudata_pack->a : "<<sqrt(ax*ax+ay*ay+az*az)<<endl;
+                cout<<"imu_time : "<<visensor_imudata_pack.imu_time<<endl;
+                cout<<"imu_time : "<<visensor_imudata_pack.system_time.tv_usec<<endl;
 				counter=0;
 			}
+            **/
 			sensor_msgs::Imu imu_msg;
 			imu_msg.header.frame_id = "/imu";
 			ros::Time imu_time;
@@ -108,7 +110,7 @@ int main(int argc, char **argv)
 
     visensor_load_settings(settingPath.c_str());
 
-	// 手动设置相机参数
+    // Set the camera parameters manually
 	//set_current_mode(5);
 	//set_auto_EG(0);
     //visensor_set_exposure(50);
@@ -116,7 +118,8 @@ int main(int argc, char **argv)
 	//set_visensor_cam_selection_mode(2);
 	//set_resolution(false);
 	//set_fps_mode(true);
-	// 保存相机参数到原配置文件
+
+    // Save the camera parameters to the original configuration file
 	//save_current_settings();
 	
 	int r = visensor_Start_Cameras();
@@ -125,7 +128,7 @@ int main(int argc, char **argv)
 		printf("Opening cameras failed...\r\n");
 		return r;
 	}
-	// 创建用来接收camera数据的图像
+    // Create an image to receive camera data
 	if(!visensor_resolution_status)
 	{
 		img_left.create(cv::Size(640,480),CV_8U);
@@ -165,7 +168,7 @@ int main(int argc, char **argv)
 	// imu publisher
 	pub_imu = n.advertise<sensor_msgs::Imu>("imu0", 200);
  
-	// publish 到这两个 topic
+    // publish to those two topic
 	image_transport::ImageTransport it(n);
 	image_transport::Publisher pub = it.advertise("/cam0/image_raw", 1);
 	sensor_msgs::ImagePtr msg;
@@ -174,7 +177,7 @@ int main(int argc, char **argv)
 	image_transport::Publisher pub1 = it1.advertise("/cam1/image_raw", 1);
 	sensor_msgs::ImagePtr msg1;
 
-	// 使用camera硬件帧率设置发布频率
+    // Use the camera hardware frame rate to set the publishing frequency
 	ros::Rate loop_rate((int)hardware_fps);
 
 	int static_ct=0;
@@ -197,7 +200,7 @@ int main(int argc, char **argv)
 			visensor_imudata paired_imu=visensor_get_stereoImg((char *)img_left.data,(char *)img_right.data,left_stamp,right_stamp);
 
 
-			// 显示同步数据的时间戳（单位微秒）
+            // Display the timestamp of the synchronization data (in units of microseconds)
 			//cout<<"left_time : "<<left_stamp.tv_usec<<endl;
 			//cout<<"right_time : "<<right_stamp.tv_usec<<endl;
 			//cout<<"paired_imu time ===== "<<paired_imu.system_time.tv_usec<<endl<<endl;
@@ -206,7 +209,7 @@ int main(int argc, char **argv)
 			cv_bridge::CvImage t_left=cv_bridge::CvImage(std_msgs::Header(), "mono8", img_left);
 			cv_bridge::CvImage t_right=cv_bridge::CvImage(std_msgs::Header(), "mono8", img_right);
 
-			// 加时间戳(right_time=left_time)
+            // Plus timestamp (right_time=left_time)
 			ros::Time msg_time;
 			msg_time.sec=left_stamp.tv_sec;
 			msg_time.nsec=1000*left_stamp.tv_usec;
@@ -229,7 +232,7 @@ int main(int argc, char **argv)
 				static_ct=0;
 			}
 			
-			// 显示时间戳
+            // Show timestamp
 			//cout<<"left_time : "<<left_stamp.tv_usec<<endl;
 			//cout<<"right_time : "<<right_stamp.tv_usec<<endl<<endl;
 
@@ -238,9 +241,9 @@ int main(int argc, char **argv)
 		{
 			visensor_imudata paired_imu=visensor_get_rightImg((char *)img_right.data,right_stamp);
 
-			// 显示同步数据的时间戳（单位微秒）
-			cout<<"right_time : "<<right_stamp.tv_usec<<endl;
-			cout<<"paired_imu time ===== "<<paired_imu.system_time.tv_usec<<endl<<endl;
+            // Display the timestamp of the synchronization data (in units of microseconds)
+            //cout<<"right_time : "<<right_stamp.tv_usec<<endl;
+            //cout<<"paired_imu time ===== "<<paired_imu.system_time.tv_usec<<endl<<endl;
 
 			cv_bridge::CvImage t_right=cv_bridge::CvImage(std_msgs::Header(), "mono8", img_right);
 
@@ -259,13 +262,13 @@ int main(int argc, char **argv)
 		{
 			visensor_imudata paired_imu=visensor_get_leftImg((char *)img_left.data,left_stamp);
 
-			// 显示同步数据的时间戳（单位微秒）
-			cout<<"left_time : "<<left_stamp.tv_usec<<endl;
-			cout<<"paired_imu time ===== "<<paired_imu.system_time.tv_usec<<endl<<endl;
+            // Display the timestamp of the synchronization data (in units of microseconds)
+            // cout<<"left_time : "<<left_stamp.tv_usec<<endl;
+            // cout<<"paired_imu time ===== "<<paired_imu.system_time.tv_usec<<endl<<endl;
 
 			cv_bridge::CvImage t_left=cv_bridge::CvImage(std_msgs::Header(), "mono8", img_left);
 
-			// 加时间戳
+            // Plus timestamp
 			ros::Time msg_time;
 			msg_time.sec=left_stamp.tv_sec;
 			msg_time.nsec=1000*left_stamp.tv_usec;
