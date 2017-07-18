@@ -29,10 +29,12 @@ EG_mode
 manual,100,100
 auto,300,5,58
 autoexp_manualgain,300,5,58,100
-/dev/ttyUSB0,5
+/dev/LOITOR,5
 #
+#   339, -72, -1510
+# Gravity 16280
 IMU-acc-bias
-Gx,346
-Gy,129
-Gz,-1616
+Gx,339
+Gy,-72
+Gz,-1510
 #

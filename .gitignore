@@ -33,3 +33,11 @@
 
 # Build folders
 build/
+
+loitor_ros_workspace/\.catkin_tools/
+
+loitor_ros_workspace/devel/
+loitor_ros_workspace/logs/
+
+
+CMakeLists\.txt\.user

@@ -97,16 +97,22 @@ void* imu_data_stream(void *)
 int main(int argc, char **argv)
 { 
 	/************************ Start Cameras ************************/
-	if(argv[1])
-		visensor_load_settings(argv[1]);
-	else 
-		visensor_load_settings("src/loitor_stereo_visensor/Loitor_VISensor_Setups.txt");
+    std::string settingPath = "src/loitor_stereo_visensor/Loitor_VISensor_Setups.txt";
+
+    if(argv[1])
+    {
+        settingPath = argv[1];
+    }
+
+    cout<<"Loading settings from  : "<< settingPath <<endl;
+
+    visensor_load_settings(settingPath.c_str());
 
 	// 手动设置相机参数
 	//set_current_mode(5);
 	//set_auto_EG(0);
-	//set_exposure(50);
-	//set_gain(200);
+    //visensor_set_exposure(50);
+    //visensor_set_gain(100);
 	//set_visensor_cam_selection_mode(2);
 	//set_resolution(false);
 	//set_fps_mode(true);
