@@ -1,8 +1,22 @@
 <launch>
     <arg name="config_path" default = "$(find loitor_stereo_visensor)/cfg/Loitor_VISensor_Setups.txt" />
 	
+	<arg name="eg_mode"           default = "1" /> <!--  0-ManEG | 1-AutoEG with limits | 2-AutoE&ManG | 3- fully auto -->
+	<arg name="manual_exposure"   default = "125" /> <!-- 0..255 -->
+	<arg name="manual_gain"       default = "0" /> <!-- 0..255 -->
+
+	<arg name="min_auto_exposure"       default = "0" /> <!-- 0..255 -->
+	<arg name="max_auto_exposure"       default = "150" /> <!-- 0..255 -->
+	
     <node name="loitor_stereo_visensor" pkg="loitor_stereo_visensor" type="loitor_stereo_visensor" output="screen" args="/data/git/vi_sensor_sdk/loitor_ros_workspace/src/loitor_stereo_visensor/cfg/Loitor_VISensor_Setups.txt">
        <param name="config_file" type="string" value="$(arg config_path)" />
+
+       <param name="eg_mode"            type="int" value="$(arg eg_mode)" />
+       <param name="manual_exposure"    type="int" value="$(arg manual_exposure)" />
+       <param name="manual_gain"        type="int" value="$(arg manual_gain)" />
+       <param name="min_auto_exposure"  type="int" value="$(arg min_auto_exposure)" />
+       <param name="max_auto_exposure"  type="int" value="$(arg max_auto_exposure)" />
+
     </node>
 
 </launch>

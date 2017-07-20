@@ -192,7 +192,7 @@ void visensor_load_settings(const char* settings_file)
     /******************************* Load Settings File ***************************************/
 
     LOG("\r\n**********************************************\r\n");
-    LOG("Loading Settings File...\r\n");
+    LOG("Loading Settings File: %s\r\n", settings_file);
 
     visensor_settings_file_name=settings_file;
 

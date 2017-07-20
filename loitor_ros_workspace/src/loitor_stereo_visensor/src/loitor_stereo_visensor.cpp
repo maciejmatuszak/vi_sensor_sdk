@@ -111,9 +111,27 @@ int main(int argc, char **argv)
     }
     local_nh.param<string> ("config_file", settingPath, settingPath);
 
-    cout<<"Loading settings from  : "<< settingPath <<endl;
-
     visensor_load_settings(settingPath.c_str());
+
+    int ros_eg_mode = 3;
+    int ros_manual_exposure = 20;
+    int ros_manual_gain = 20;
+    int ros_min_auto_exposure = 0;
+    int ros_max_auto_exposure = 255;
+
+
+    local_nh.param<int> ("eg_mode", ros_eg_mode, ros_eg_mode);
+    local_nh.param<int> ("manual_exposure", ros_manual_exposure, ros_manual_exposure);
+    local_nh.param<int> ("manual_gain", ros_manual_gain, ros_manual_gain);
+    local_nh.param<int> ("min_auto_exposure", ros_min_auto_exposure, ros_min_auto_exposure);
+    local_nh.param<int> ("max_auto_exposure", ros_max_auto_exposure, ros_max_auto_exposure);
+
+    visensor_set_auto_EG(ros_eg_mode);
+    visensor_set_exposure(ros_manual_exposure);
+    visensor_set_gain(ros_manual_gain);
+    visensor_set_min_autoExp(ros_min_auto_exposure);
+    visensor_set_max_autoExp(ros_max_auto_exposure);
+
 
     // Set the camera parameters manually
 	//set_current_mode(5);
