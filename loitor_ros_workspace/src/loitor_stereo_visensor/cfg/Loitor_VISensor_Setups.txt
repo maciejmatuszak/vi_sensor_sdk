@@ -34,7 +34,7 @@ autoexp_manualgain,300,5,58,100
 #   339, -72, -1510
 # Gravity 16280
 IMU-acc-bias
-Gx,339
-Gy,-72
-Gz,-1510
+Gx,306
+Gy,15
+Gz,-945
 #
