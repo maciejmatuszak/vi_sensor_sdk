@@ -141,36 +141,55 @@ int main(int argc, char **argv)
 
 	ros::NodeHandle local_nh("~");
 
-	std::string settingFilePath = "src/loitor_stereo_visensor/Loitor_VISensor_Setups.txt";
+	string configPath= "";
+	std::string camera_id = "LTR000";
+	std::string configFile = "Loitor_VISensor_Setups.txt";
 
 	/************************ Start Cameras ************************/
 
-	if(argv[1])
-	{
-		settingFilePath = argv[1];
-	}
-	local_nh.param<string> ("config_file", settingFilePath, settingFilePath);
+	local_nh.param<string> ("config_path", configPath, configPath);
+	local_nh.param<string> ("camera_id", camera_id, camera_id);
+	local_nh.param<string> ("config_file", configFile, configFile);
+
+	ROS_INFO_STREAM("Config path:" << configPath);
+	ROS_INFO_STREAM("Camera id:" << camera_id);
+	ROS_INFO_STREAM("Config File:" << configFile);
 
 	//by default settins path is where the config file resides
-	boost::filesystem::path settingsPathB = boost::filesystem::path(settingFilePath).parent_path();
+	boost::filesystem::path settingsPathB = boost::filesystem::path(configPath);
+	if(!boost::filesystem::exists(settingsPathB)  || ! boost::filesystem::is_directory(settingsPathB))
+	{
+		ROS_FATAL_STREAM("The config path does not exists!: " << settingsPathB.string());
+		exit( -1);
+	}
+	if(camera_id.empty())
+	{
+		ROS_FATAL_STREAM("The camera id can not be empty: " << settingsPathB.string());
+		exit( -1);
+	}
 
-	string cam0IntrinsicFilePath = (settingsPathB / boost::filesystem::path("cam0_camera_info.yaml")).string();
-	string cam1IntrinsicFilePath = (settingsPathB / boost::filesystem::path("cam1_camera_info.yaml")).string();
+	settingsPathB = settingsPathB / camera_id;
 
-	sensor_msgs::CameraInfoPtr cameraInfo0 = boost::make_shared<sensor_msgs::CameraInfo>();
-	sensor_msgs::CameraInfoPtr cameraInfo1 = boost::make_shared<sensor_msgs::CameraInfo>();
+	//create the dir if does not exists
+	if(!boost::filesystem::exists(settingsPathB))
+	{
+		boost::filesystem::create_directory(settingsPathB);
+	}
+
+	string cam0IntrinsicFilePath = (settingsPathB / "cam0_camera_info.yaml").string();
+	string cam1IntrinsicFilePath = (settingsPathB / "cam1_camera_info.yaml").string();
+	ROS_INFO_STREAM("CAM0 intrinsic file:" << cam0IntrinsicFilePath);
+	ROS_INFO_STREAM("CAM1 intrinsic file:" << cam1IntrinsicFilePath);
+
+	sensor_msgs::CameraInfoPtr cameraInfo0Ptr = boost::make_shared<sensor_msgs::CameraInfo>();
+	sensor_msgs::CameraInfoPtr cameraInfo1Ptr = boost::make_shared<sensor_msgs::CameraInfo>();
 	string cam0Name = "left";
 	string cam1Name = "right";
 
 
-	//it can be overriten bu config
-	string settingsPath = settingsPathB.string();
-	local_nh.param<string> ("config_path", settingsPath, settingsPath);
-	settingsPathB = boost::filesystem::path(settingsPath);
-
-	loadIntrinsicsFile(cam0IntrinsicFilePath,cam0Name,cameraInfo0);
-	loadIntrinsicsFile(cam1IntrinsicFilePath,cam1Name,cameraInfo1);
-	visensor_load_settings(settingFilePath.c_str());
+	loadIntrinsicsFile(cam0IntrinsicFilePath, cam0Name, cameraInfo0Ptr);
+	loadIntrinsicsFile(cam1IntrinsicFilePath, cam1Name, cameraInfo1Ptr);
+	visensor_load_settings((settingsPathB / configFile).string().c_str());
 
 
 
@@ -207,9 +226,9 @@ int main(int argc, char **argv)
 	//save_current_settings();
 
 	ros::ServiceServer set_cam_info_srv_0 = local_nh.advertiseService<sensor_msgs::SetCameraInfo::Request, sensor_msgs::SetCameraInfo::Response> (
-				cam0Name + "/set_camera_info", boost::bind(setCamInfo, _1, _2, cam0IntrinsicFilePath, cam0Name, cameraInfo0));
+				cam0Name + "/set_camera_info", boost::bind(setCamInfo, _1, _2, cam0IntrinsicFilePath, cam0Name, cameraInfo0Ptr));
 	ros::ServiceServer set_cam_info_srv_1 = local_nh.advertiseService<sensor_msgs::SetCameraInfo::Request, sensor_msgs::SetCameraInfo::Response> (
-				cam1Name + "/cam1/set_camera_info", boost::bind(setCamInfo, _1, _2, cam1IntrinsicFilePath, cam1Name, cameraInfo1));
+				cam1Name + "/cam1/set_camera_info", boost::bind(setCamInfo, _1, _2, cam1IntrinsicFilePath, cam1Name, cameraInfo1Ptr));
 
 	int r = visensor_Start_Cameras();
 	if(r<0)
@@ -316,10 +335,10 @@ int main(int argc, char **argv)
 
 			static_ct++;
 			{
-				cameraInfo0->header = msg0->header;
-				cameraInfo1->header = msg1->header;
-				pub0.publish(msg0, cameraInfo0);
-				pub1.publish(msg1, cameraInfo1);
+				cameraInfo0Ptr->header = msg0->header;
+				cameraInfo1Ptr->header = msg1->header;
+				pub0.publish(msg0, cameraInfo0Ptr);
+				pub1.publish(msg1, cameraInfo1Ptr);
 				static_ct=0;
 			}
 
@@ -348,8 +367,8 @@ int main(int argc, char **argv)
 
 			msg1 = t_right.toImageMsg();
 
-			cameraInfo1->header = msg1->header;
-			pub1.publish(msg1, cameraInfo1);
+			cameraInfo1Ptr->header = msg1->header;
+			pub1.publish(msg1, cameraInfo1Ptr);
 		}
 		else if(visensor_cam_selection==2)
 		{
@@ -376,8 +395,8 @@ int main(int argc, char **argv)
 			static_ct++;
 			if(static_ct>=5)
 			{
-				cameraInfo0->header = msg0->header;
-				pub0.publish(msg0, cameraInfo0);
+				cameraInfo0Ptr->header = msg0->header;
+				pub0.publish(msg0, cameraInfo0Ptr);
 				static_ct=0;
 			}
 		}
