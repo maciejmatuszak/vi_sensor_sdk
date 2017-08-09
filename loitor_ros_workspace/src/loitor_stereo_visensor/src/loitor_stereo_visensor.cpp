@@ -228,7 +228,7 @@ int main(int argc, char **argv)
 	ros::ServiceServer set_cam_info_srv_0 = local_nh.advertiseService<sensor_msgs::SetCameraInfo::Request, sensor_msgs::SetCameraInfo::Response> (
 				cam0Name + "/set_camera_info", boost::bind(setCamInfo, _1, _2, cam0IntrinsicFilePath, cam0Name, cameraInfo0Ptr));
 	ros::ServiceServer set_cam_info_srv_1 = local_nh.advertiseService<sensor_msgs::SetCameraInfo::Request, sensor_msgs::SetCameraInfo::Response> (
-				cam1Name + "/cam1/set_camera_info", boost::bind(setCamInfo, _1, _2, cam1IntrinsicFilePath, cam1Name, cameraInfo1Ptr));
+				cam1Name + "/set_camera_info", boost::bind(setCamInfo, _1, _2, cam1IntrinsicFilePath, cam1Name, cameraInfo1Ptr));
 
 	int r = visensor_Start_Cameras();
 	if(r<0)
