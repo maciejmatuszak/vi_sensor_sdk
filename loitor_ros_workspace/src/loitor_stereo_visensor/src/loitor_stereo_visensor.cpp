@@ -1,9 +1,13 @@
 #include "ros/ros.h" 
 #include "std_msgs/String.h"
 #include <image_transport/image_transport.h>
+#include <camera_calibration_parsers/parse.h>
 #include <cv_bridge/cv_bridge.h>
-#include "sensor_msgs/Imu.h"
+#include <sensor_msgs/Imu.h>
+#include <sensor_msgs/CameraInfo.h>
+#include <sensor_msgs/SetCameraInfo.h>
 
+# include <boost/filesystem.hpp>
 #include <cv.h>
 #include <highgui.h>
 #include "cxcore.hpp"
@@ -96,22 +100,79 @@ void* imu_data_stream(void *)
 }
 
 
+
+void loadIntrinsicsFile(string config_file_path, string &camera_name, sensor_msgs::CameraInfoPtr cam_info)
+{
+
+    if (camera_calibration_parsers::readCalibration (config_file_path, camera_name, *cam_info))
+    {
+        cam_info->header.frame_id = "/" + camera_name;
+        ROS_INFO_STREAM ("Loaded intrinsics parameters for [" << camera_name << "]");
+    }
+}
+
+
+bool saveIntrinsicsFile(string config_file_path, string &camera_name, sensor_msgs::CameraInfoPtr cam_info)
+{
+    if (camera_calibration_parsers::writeCalibration (config_file_path, camera_name, *cam_info))
+    {
+        ROS_INFO_STREAM("Saved intrinsics parameters for [" << camera_name << "] to " << config_file_path);
+        return true;
+    }
+    return false;
+}
+
+
+bool setCamInfo (sensor_msgs::SetCameraInfo::Request &req, sensor_msgs::SetCameraInfo::Response &rsp , string config_file_path, string &camera_name, sensor_msgs::CameraInfoPtr cam_info )
+{
+    *cam_info = req.camera_info;
+    cam_info->header.frame_id = "/" + camera_name;
+    rsp.success = saveIntrinsicsFile(config_file_path, camera_name, cam_info);
+    rsp.status_message = (rsp.success) ?
+                         "successfully wrote camera info to file" :
+                         "failed to write camera info to file";
+    return true;
+}
+
+
 int main(int argc, char **argv)
 { 
     ros::init(argc, argv, "loitor_stereo_visensor");
 
     ros::NodeHandle local_nh("~");
-    std::string settingPath = "src/loitor_stereo_visensor/Loitor_VISensor_Setups.txt";
+
+    std::string settingFilePath = "src/loitor_stereo_visensor/Loitor_VISensor_Setups.txt";
 
 	/************************ Start Cameras ************************/
 
     if(argv[1])
     {
-        settingPath = argv[1];
+        settingFilePath = argv[1];
     }
-    local_nh.param<string> ("config_file", settingPath, settingPath);
+    local_nh.param<string> ("config_file", settingFilePath, settingFilePath);
 
-    visensor_load_settings(settingPath.c_str());
+    //by default settins path is where the config file resides
+    boost::filesystem::path settingsPathB = boost::filesystem::path(settingFilePath).parent_path();
+
+    string cam0IntrinsicFilePath = (settingsPathB / boost::filesystem::path("cam0_camera_info.yaml")).string();
+    string cam1IntrinsicFilePath = (settingsPathB / boost::filesystem::path("cam1_camera_info.yaml")).string();
+
+    sensor_msgs::CameraInfoPtr cameraInfo0 = boost::make_shared<sensor_msgs::CameraInfo>();
+    sensor_msgs::CameraInfoPtr cameraInfo1 = boost::make_shared<sensor_msgs::CameraInfo>();
+    string cam0Name = "left";
+    string cam1Name = "right";
+
+
+    //it can be overriten bu config
+    string settingsPath = settingsPathB.string();
+    local_nh.param<string> ("config_path", settingsPath, settingsPath);
+    settingsPathB = boost::filesystem::path(settingsPath);
+
+    loadIntrinsicsFile(cam0IntrinsicFilePath,cam0Name,cameraInfo0);
+    loadIntrinsicsFile(cam1IntrinsicFilePath,cam1Name,cameraInfo1);
+    visensor_load_settings(settingFilePath.c_str());
+
+
 
     int ros_eg_mode = 3;
     int ros_manual_exposure = 20;
@@ -145,6 +206,11 @@ int main(int argc, char **argv)
     // Save the camera parameters to the original configuration file
 	//save_current_settings();
 	
+    ros::ServiceServer set_cam_info_srv_0 = local_nh.advertiseService<sensor_msgs::SetCameraInfo::Request, sensor_msgs::SetCameraInfo::Response> (
+                cam0Name + "/set_camera_info", boost::bind(setCamInfo, _1, _2, cam0IntrinsicFilePath, cam0Name, cameraInfo0));
+    ros::ServiceServer set_cam_info_srv_1 = local_nh.advertiseService<sensor_msgs::SetCameraInfo::Request, sensor_msgs::SetCameraInfo::Response> (
+                cam1Name + "/cam1/set_camera_info", boost::bind(setCamInfo, _1, _2, cam1IntrinsicFilePath, cam1Name, cameraInfo1));
+
 	int r = visensor_Start_Cameras();
 	if(r<0)
 	{
@@ -185,18 +251,17 @@ int main(int argc, char **argv)
 	printf("Failed to create thread imu_data_stream\r\n");
 	
 
-	ros::NodeHandle n;
 
 	// imu publisher
-	pub_imu = n.advertise<sensor_msgs::Imu>("imu0", 200);
+    pub_imu = local_nh.advertise<sensor_msgs::Imu>("imu0", 200);
  
     // publish to those two topic
-	image_transport::ImageTransport it(n);
-	image_transport::Publisher pub = it.advertise("/cam0/image_raw", 1);
-	sensor_msgs::ImagePtr msg;
+    image_transport::ImageTransport it(local_nh);
+    image_transport::CameraPublisher pub0 = it.advertiseCamera(cam0Name + "/image_raw", 1);
+    sensor_msgs::ImagePtr msg0;
 
-	image_transport::ImageTransport it1(n);
-	image_transport::Publisher pub1 = it1.advertise("/cam1/image_raw", 1);
+    image_transport::ImageTransport it1(local_nh);
+    image_transport::CameraPublisher pub1 = it1.advertiseCamera(cam1Name + "/image_raw", 1);
 	sensor_msgs::ImagePtr msg1;
 
     // Use the camera hardware frame rate to set the publishing frequency
@@ -244,13 +309,15 @@ int main(int argc, char **argv)
 			t_right.header.seq=0;
 			t_left.header.seq=0;
 
-			msg = t_left.toImageMsg();
+            msg0 = t_left.toImageMsg();
 			msg1 = t_right.toImageMsg();
 
 			static_ct++;
 			{
-				pub.publish(msg);
-				pub1.publish(msg1);
+                cameraInfo0->header = msg0->header;
+                cameraInfo1->header = msg1->header;
+                pub0.publish(msg0, cameraInfo0);
+                pub1.publish(msg1, cameraInfo1);
 				static_ct=0;
 			}
 			
@@ -278,7 +345,8 @@ int main(int argc, char **argv)
 			
 			msg1 = t_right.toImageMsg();
 			
-			pub1.publish(msg1);
+            cameraInfo1->header = msg1->header;
+            pub1.publish(msg1, cameraInfo1);
 		}
 		else if(visensor_cam_selection==2)
 		{
@@ -298,13 +366,14 @@ int main(int argc, char **argv)
 			t_left.header.seq=0;
 
 
-			msg = t_left.toImageMsg();
+            msg0 = t_left.toImageMsg();
 
 			
 			static_ct++;
 			if(static_ct>=5)
 			{
-				pub.publish(msg);
+                cameraInfo0->header = msg0->header;
+                pub0.publish(msg0, cameraInfo0);
 				static_ct=0;
 			}
 		}
