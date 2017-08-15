@@ -7,6 +7,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   cv_bridge
   image_transport
+  camera_calibration_parsers
   message_generation
   sensor_msgs
 )
@@ -41,11 +42,17 @@ add_library(loitorimu src/loitorimu.cpp)
 add_executable(loitor_stereo_visensor src/loitor_stereo_visensor.cpp) 
 target_link_libraries(loitor_stereo_visensor ${catkin_LIBRARIES})
 target_link_libraries(loitor_stereo_visensor loitorusbcam loitorimu usb-1.0 ${OpenCV_LIBS})
-add_dependencies(loitor_stereo_visensor loitor_vis_generate_messages_cpp) 
 
 
 
+###############################################################################
 
+#Add all files in subdirectories of the project in
+# a dummy_target so qtcreator have access to all files
+FILE(GLOB_RECURSE extra_files ${CMAKE_SOURCE_DIR}/*)
+add_custom_target(dummy_${PROJECT_NAME} SOURCES ${extra_files})
+
+##############################################################################
 
 
 

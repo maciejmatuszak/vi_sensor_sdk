@@ -41,3 +41,5 @@ loitor_ros_workspace/logs/
 
 
 CMakeLists\.txt\.user
+
+loitor_ros_workspace/src/build-loitor_stereo_visensor-*/
