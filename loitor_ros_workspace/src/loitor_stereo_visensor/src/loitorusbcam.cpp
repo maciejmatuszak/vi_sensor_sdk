@@ -108,6 +108,10 @@ int VI_FIFO_matcher;
 double imu_acc_bias_X;
 double imu_acc_bias_Y;
 double imu_acc_bias_Z;
+float imu_rotation_q_w;
+float imu_rotation_q_x;
+float imu_rotation_q_y;
+float imu_rotation_q_z;
 
 string imu_port_name;
 visensor_imudata visensor_imudata_pack;
@@ -550,6 +554,22 @@ void visensor_set_imu_bias(float bx,float by,float bz)
     imu_acc_bias_Y=by;
     imu_acc_bias_Z=bz;
 }
+
+void visensor_set_imu_rotation(float qw, float qx, float qy, float qz)
+{
+    if(!allow_settings_change)
+    {
+        cout<<"settings FIXED !"<<endl;
+        return;
+    }
+
+    imu_rotation_q_w = qw;
+    imu_rotation_q_x = qx;
+    imu_rotation_q_y = qy;
+    imu_rotation_q_z = qz;
+    printf("  IMU ROT Quat: %11f,%11f,%11f,%11f\r\n",imu_rotation_q_w, imu_rotation_q_x, imu_rotation_q_y, imu_rotation_q_z);
+}
+
 void visensor_set_imu_portname(char* input_name)
 {
     if(!allow_settings_change)
@@ -1602,7 +1622,9 @@ void *imu_data_feed(void*)
     short int biasZ=(short int)imu_acc_bias_Z;
     short int setaccoffset[3] = {biasX,  biasY, biasZ};
     //rotation quoternion w, x, ,y, z
-    float imu_rot_quoternion[4] = {0.707106781187, 0.0, -0.707106781187, 0.0};
+    float imu_rot_quoternion[4] = {imu_rotation_q_w, imu_rotation_q_x, imu_rotation_q_y, imu_rotation_q_z};
+    printf("  in imu_data_feed IMU ROT Quat: %11f,%11f,%11f,%11f\r\n",imu_rot_quoternion[0],imu_rot_quoternion[1],imu_rot_quoternion[2],imu_rot_quoternion[3]);
+
 
     // 在此函数中更新 IMU-FIFO 用于计算同步 VI-pair
 

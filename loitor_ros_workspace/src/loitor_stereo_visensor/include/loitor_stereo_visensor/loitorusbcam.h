@@ -43,6 +43,7 @@ void visensor_set_current_HB(int HB);
 void visensor_set_desired_bin(int db);
 void visensor_set_cam_selection_mode(int _visensor_cam_selection);
 void visensor_set_imu_bias(float bx,float by,float bz);
+void visensor_set_imu_rotation(float qw, float qx, float qy, float qz);
 void visensor_set_imu_portname(char* input_name);
 void visensor_set_current_mode(int _mode);
 

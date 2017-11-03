@@ -199,14 +199,27 @@ int main(int argc, char **argv)
 	int ros_min_auto_exposure = 0;
 	int ros_max_auto_exposure = 255;
 
+    //default rotation so X facing forward along optical axes, y left, z up
+    float imu_rotation_q_w_ = 0.707106781187;
+    float imu_rotation_q_x_ = 0.0;
+    float imu_rotation_q_y_ = -0.707106781187;
+    float imu_rotation_q_z_ = 0.0;
+
+
 
 	local_nh.param<int> ("eg_mode", ros_eg_mode, ros_eg_mode);
 	local_nh.param<int> ("manual_exposure", ros_manual_exposure, ros_manual_exposure);
 	local_nh.param<int> ("manual_gain", ros_manual_gain, ros_manual_gain);
 	local_nh.param<int> ("min_auto_exposure", ros_min_auto_exposure, ros_min_auto_exposure);
-	local_nh.param<int> ("max_auto_exposure", ros_max_auto_exposure, ros_max_auto_exposure);
+    local_nh.param<int> ("max_auto_exposure", ros_max_auto_exposure, ros_max_auto_exposure);
 
-	visensor_set_auto_EG(ros_eg_mode);
+    local_nh.param<float> ("imu_rotation_q_w", imu_rotation_q_w_, imu_rotation_q_w_);
+    local_nh.param<float> ("imu_rotation_q_x", imu_rotation_q_x_, imu_rotation_q_x_);
+    local_nh.param<float> ("imu_rotation_q_y", imu_rotation_q_y_, imu_rotation_q_y_);
+    local_nh.param<float> ("imu_rotation_q_z", imu_rotation_q_z_, imu_rotation_q_z_);
+
+    visensor_set_imu_rotation(imu_rotation_q_w_, imu_rotation_q_x_, imu_rotation_q_y_, imu_rotation_q_z_);
+    visensor_set_auto_EG(ros_eg_mode);
 	visensor_set_exposure(ros_manual_exposure);
 	visensor_set_gain(ros_manual_gain);
 	visensor_set_min_autoExp(ros_min_auto_exposure);
