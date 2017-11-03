@@ -327,17 +327,18 @@ int visensor_get_imu_data(unsigned char* imu_frame,short int* acc_offset, float*
     imu_data[9] = *(int*)(&imu_frame[27]);
 
     //convert raw rotation velocity to rad/sec
-    float rot_vel[3]= {
+    float temp_v3_in[3]= {
         1.0*imu_data[0]/32768*2000,
         1.0*imu_data[1]/32768*2000,
         1.0*imu_data[2]/32768*2000
     };
 
-    float rot_vel_out[3] = {0.0,0.0,0.0};
-    q_rotvec(imu_rot_quot, rot_vel, rot_vel_out);
-    imudata_struct->rx = rot_vel_out[0];
-    imudata_struct->ry = rot_vel_out[1];
-    imudata_struct->rz = rot_vel_out[2];
+    float temp_v3_out[3] = {0.0,0.0,0.0};
+    //rotate angular velocity vector
+    q_rotvec(imu_rot_quot, temp_v3_in, temp_v3_out);
+    imudata_struct->rx = temp_v3_out[0];
+    imudata_struct->ry = temp_v3_out[1];
+    imudata_struct->rz = temp_v3_out[2];
 
     //remove acceleration bias
     float facc_nobias[3]= {
@@ -346,9 +347,16 @@ int visensor_get_imu_data(unsigned char* imu_frame,short int* acc_offset, float*
         (float)(imu_data[5]-acc_offset[2])};
 
     //convert raw acceleration to [g] (I think so...)
-    imudata_struct->ax = 1.0*facc_nobias[0]/16384*9.81;
-    imudata_struct->ay = 1.0*facc_nobias[1]/16384*9.81;
-    imudata_struct->az = 1.0*facc_nobias[2]/16384*9.81;
+    temp_v3_in[0] =  1.0*facc_nobias[0]/16384*9.81;
+    temp_v3_in[1] =  1.0*facc_nobias[1]/16384*9.81;
+    temp_v3_in[2] =  1.0*facc_nobias[2]/16384*9.81;
+
+    //rotate acceleration vector
+    q_rotvec(imu_rot_quot, temp_v3_in, temp_v3_out);
+
+    imudata_struct->ax = temp_v3_out[0];
+    imudata_struct->ay = temp_v3_out[1];
+    imudata_struct->az = temp_v3_out[2];
 
     //raw orientation quoternion
     float quat[4]= {
@@ -357,25 +365,24 @@ int visensor_get_imu_data(unsigned char* imu_frame,short int* acc_offset, float*
         (float)imu_data[8],
         (float)imu_data[9]};
 
-    //acceleration vector with bias
-    float facc[3]= {
-        (float)imu_data[3],
-        (float)imu_data[4],
-        (float)imu_data[5]};
-
-    static float faccg[3]= {0,0,0};
     q_normalize(quat);
-    imudata_struct->qw = quat[0];
-    imudata_struct->qx = quat[1];
-    imudata_struct->qy = quat[2];
-    imudata_struct->qz = quat[3];
+    float temp_quot_out[4] = {1.0, 0.0, 0.0, 0.0};
+    q_mult(imu_rot_quot, quat, temp_quot_out);
+    imudata_struct->qw = temp_quot_out[0];
+    imudata_struct->qx = temp_quot_out[1];
+    imudata_struct->qy = temp_quot_out[2];
+    imudata_struct->qz = temp_quot_out[3];
 
     imudata_struct->num = imu_frame[2];
 
-    q_rotvec(quat,facc_nobias,faccg);
 
     if(show_data)
     {
+        //acceleration vector with bias
+        float facc[3]= {
+            (float)imu_data[3],
+            (float)imu_data[4],
+            (float)imu_data[5]};
         printf("Num: %03d",imu_frame[2]);
         printf("  Gyr: %6d,%6d,%6d",imu_data[0],imu_data[1],imu_data[2]);
         printf("  Acc: %6d,%6d,%6d",(int)facc[0],(int)facc[1],(int)facc[2]);

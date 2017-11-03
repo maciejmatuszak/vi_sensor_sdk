@@ -1602,7 +1602,7 @@ void *imu_data_feed(void*)
     short int biasZ=(short int)imu_acc_bias_Z;
     short int setaccoffset[3] = {biasX,  biasY, biasZ};
     //rotation quoternion w, x, ,y, z
-    float imu_rot_quoternion[4] = {1.0, 0.0, 0.0, 0.0};
+    float imu_rot_quoternion[4] = {0.707106781187, 0.0, -0.707106781187, 0.0};
 
     // 在此函数中更新 IMU-FIFO 用于计算同步 VI-pair
 
@@ -1630,7 +1630,7 @@ void *imu_data_feed(void*)
     {
         if(visensor_get_imu_frame(imu_fd,imu_frame)==0)
         {
-            visensor_get_imu_data(imu_frame,setaccoffset,imu_rot_quoternion, &visensor_imudata_pack,false);
+            visensor_get_imu_data(imu_frame,setaccoffset, imu_rot_quoternion, &visensor_imudata_pack,false);
             // 将imu更新标记打开
             visensor_mark_imu_update();
 
