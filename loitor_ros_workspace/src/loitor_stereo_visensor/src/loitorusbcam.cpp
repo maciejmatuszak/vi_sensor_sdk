@@ -567,7 +567,6 @@ void visensor_set_imu_rotation(float qw, float qx, float qy, float qz)
     imu_rotation_q_x = qx;
     imu_rotation_q_y = qy;
     imu_rotation_q_z = qz;
-    printf("  IMU ROT Quat: %11f,%11f,%11f,%11f\r\n",imu_rotation_q_w, imu_rotation_q_x, imu_rotation_q_y, imu_rotation_q_z);
 }
 
 void visensor_set_imu_portname(char* input_name)
@@ -1623,7 +1622,7 @@ void *imu_data_feed(void*)
     short int setaccoffset[3] = {biasX,  biasY, biasZ};
     //rotation quoternion w, x, ,y, z
     float imu_rot_quoternion[4] = {imu_rotation_q_w, imu_rotation_q_x, imu_rotation_q_y, imu_rotation_q_z};
-    printf("  in imu_data_feed IMU ROT Quat: %11f,%11f,%11f,%11f\r\n",imu_rot_quoternion[0],imu_rot_quoternion[1],imu_rot_quoternion[2],imu_rot_quoternion[3]);
+    printf("  IMU ROT Quat: %11f,%11f,%11f,%11f\r\n",imu_rot_quoternion[0],imu_rot_quoternion[1],imu_rot_quoternion[2],imu_rot_quoternion[3]);
 
 
     // 在此函数中更新 IMU-FIFO 用于计算同步 VI-pair
