@@ -313,7 +313,7 @@ int main(int argc, char **argv)
 	ros::Rate loop_rate((int)hardware_fps);
 
 	int static_ct=0;
-    uint32_t running_counter = 4294967290;
+    uint32_t running_counter = 0;
 
 	timeval img_time_test,img_time_offset;
 	img_time_test.tv_usec=0;
@@ -330,7 +330,6 @@ int main(int argc, char **argv)
         running_counter++;
         if(running_counter % publish_every_nth_image_ == 0)
         {
-            ROS_INFO("running_counter:=%d", running_counter);
             if(visensor_cam_selection==0)
             {
 
