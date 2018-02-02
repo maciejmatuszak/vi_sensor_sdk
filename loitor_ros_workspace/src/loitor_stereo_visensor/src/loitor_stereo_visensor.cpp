@@ -205,10 +205,24 @@ int main(int argc, char **argv)
     float imu_rotation_q_y_ = -0.707106781187;
     float imu_rotation_q_z_ = 0.0;
 
+    uint32_t publish_every_nth_image_ = 1;
+    int temp;
 
 
-	local_nh.param<int> ("eg_mode", ros_eg_mode, ros_eg_mode);
-	local_nh.param<int> ("manual_exposure", ros_manual_exposure, ros_manual_exposure);
+
+    local_nh.param<int> ("publish_every_nth_image", temp, static_cast<int>(publish_every_nth_image_));
+    if(temp <= 0)
+    {
+        ROS_ERROR("parameter publish_every_nth_image has to be > 0");
+    }
+    else
+    {
+        publish_every_nth_image_ = static_cast<uint32_t>temp;
+    }
+
+
+    local_nh.param<int> ("eg_mode", ros_eg_mode, ros_eg_mode);
+    local_nh.param<int> ("manual_exposure", ros_manual_exposure, ros_manual_exposure);
 	local_nh.param<int> ("manual_gain", ros_manual_gain, ros_manual_gain);
 	local_nh.param<int> ("min_auto_exposure", ros_min_auto_exposure, ros_min_auto_exposure);
     local_nh.param<int> ("max_auto_exposure", ros_max_auto_exposure, ros_max_auto_exposure);
@@ -300,6 +314,7 @@ int main(int argc, char **argv)
 	ros::Rate loop_rate((int)hardware_fps);
 
 	int static_ct=0;
+    uint32_t running_counter = 4294967290;
 
 	timeval img_time_test,img_time_offset;
 	img_time_test.tv_usec=0;
@@ -313,106 +328,110 @@ int main(int argc, char **argv)
 
 		//cout<<"visensor_get_hardware_fps() ==== "<<visensor_get_hardware_fps()<<endl;
 
-		if(visensor_cam_selection==0)
-		{
+        running_counter++;
+        if(running_counter % publish_every_nth_image_ == 0)
+        {
+            ROS_INFO("running_counter:=%d", running_counter);
+            if(visensor_cam_selection==0)
+            {
 
-			visensor_imudata paired_imu=visensor_get_stereoImg((char *)img_left.data,(char *)img_right.data,left_stamp,right_stamp);
+                visensor_imudata paired_imu=visensor_get_stereoImg((char *)img_left.data,(char *)img_right.data,left_stamp,right_stamp);
+
+                // Display the timestamp of the synchronization data (in units of microseconds)
+                //cout<<"left_time : "<<left_stamp.tv_usec<<endl;
+                //cout<<"right_time : "<<right_stamp.tv_usec<<endl;
+                //cout<<"paired_imu time ===== "<<paired_imu.system_time.tv_usec<<endl<<endl;
+                //cout<<"visensor_get_hardware_fps() ==== "<<1.0f/visensor_get_hardware_fps()<<endl;
+
+                cv_bridge::CvImage t_left=cv_bridge::CvImage(std_msgs::Header(), "mono8", img_left);
+                cv_bridge::CvImage t_right=cv_bridge::CvImage(std_msgs::Header(), "mono8", img_right);
+
+                // Plus timestamp (right_time=left_time)
+                ros::Time msg_time;
+                msg_time.sec=left_stamp.tv_sec;
+                msg_time.nsec=1000*left_stamp.tv_usec;
+                t_left.header.stamp = msg_time;
+                t_left.header.seq=0;
+                t_left.header.frame_id=cam0Name;
+
+                ros::Time msg1_time;
+                msg1_time.sec=left_stamp.tv_sec;
+                msg1_time.nsec=1000*left_stamp.tv_usec;
+                t_right.header.stamp = msg1_time;
+                t_right.header.seq=0;
+                t_right.header.frame_id=cam1Name;
+
+                msg0 = t_left.toImageMsg();
+                msg1 = t_right.toImageMsg();
+
+                static_ct++;
+                {
+                    cameraInfo0Ptr->header = msg0->header;
+                    cameraInfo1Ptr->header = msg1->header;
+                    pub0.publish(msg0, cameraInfo0Ptr);
+                    pub1.publish(msg1, cameraInfo1Ptr);
+                    static_ct=0;
+                }
+
+                // Show timestamp
+                //cout<<"left_time : "<<left_stamp.tv_usec<<endl;
+                //cout<<"right_time : "<<right_stamp.tv_usec<<endl<<endl;
+
+            }
+            else if(visensor_cam_selection==1)
+            {
+                visensor_imudata paired_imu=visensor_get_rightImg((char *)img_right.data,right_stamp);
+
+                // Display the timestamp of the synchronization data (in units of microseconds)
+                //cout<<"right_time : "<<right_stamp.tv_usec<<endl;
+                //cout<<"paired_imu time ===== "<<paired_imu.system_time.tv_usec<<endl<<endl;
+
+                cv_bridge::CvImage t_right=cv_bridge::CvImage(std_msgs::Header(), "mono8", img_right);
+
+                // 加时间戳
+                ros::Time msg1_time;
+                msg1_time.sec=right_stamp.tv_sec;
+                msg1_time.nsec=1000*right_stamp.tv_usec;
+                t_right.header.stamp = msg1_time;
+                t_right.header.seq=0;
+                t_right.header.frame_id = cam1Name;
+
+                msg1 = t_right.toImageMsg();
+
+                cameraInfo1Ptr->header = msg1->header;
+                pub1.publish(msg1, cameraInfo1Ptr);
+            }
+            else if(visensor_cam_selection==2)
+            {
+                visensor_imudata paired_imu=visensor_get_leftImg((char *)img_left.data,left_stamp);
+
+                // Display the timestamp of the synchronization data (in units of microseconds)
+                // cout<<"left_time : "<<left_stamp.tv_usec<<endl;
+                // cout<<"paired_imu time ===== "<<paired_imu.system_time.tv_usec<<endl<<endl;
+
+                cv_bridge::CvImage t_left=cv_bridge::CvImage(std_msgs::Header(), "mono8", img_left);
+
+                // Plus timestamp
+                ros::Time msg_time;
+                msg_time.sec=left_stamp.tv_sec;
+                msg_time.nsec=1000*left_stamp.tv_usec;
+                t_left.header.stamp = msg_time;
+                t_left.header.seq=0;
+                t_left.header.frame_id = cam0Name;
 
 
-			// Display the timestamp of the synchronization data (in units of microseconds)
-			//cout<<"left_time : "<<left_stamp.tv_usec<<endl;
-			//cout<<"right_time : "<<right_stamp.tv_usec<<endl;
-			//cout<<"paired_imu time ===== "<<paired_imu.system_time.tv_usec<<endl<<endl;
-			//cout<<"visensor_get_hardware_fps() ==== "<<1.0f/visensor_get_hardware_fps()<<endl;
-
-			cv_bridge::CvImage t_left=cv_bridge::CvImage(std_msgs::Header(), "mono8", img_left);
-			cv_bridge::CvImage t_right=cv_bridge::CvImage(std_msgs::Header(), "mono8", img_right);
-
-			// Plus timestamp (right_time=left_time)
-			ros::Time msg_time;
-			msg_time.sec=left_stamp.tv_sec;
-			msg_time.nsec=1000*left_stamp.tv_usec;
-			t_left.header.stamp = msg_time;
-			t_left.header.seq=0;
-			t_left.header.frame_id=cam0Name;
-
-			ros::Time msg1_time;
-			msg1_time.sec=left_stamp.tv_sec;
-			msg1_time.nsec=1000*left_stamp.tv_usec;
-			t_right.header.stamp = msg1_time;
-			t_right.header.seq=0;
-			t_right.header.frame_id=cam1Name;
-
-			msg0 = t_left.toImageMsg();
-			msg1 = t_right.toImageMsg();
-
-			static_ct++;
-			{
-				cameraInfo0Ptr->header = msg0->header;
-				cameraInfo1Ptr->header = msg1->header;
-				pub0.publish(msg0, cameraInfo0Ptr);
-				pub1.publish(msg1, cameraInfo1Ptr);
-				static_ct=0;
-			}
-
-			// Show timestamp
-			//cout<<"left_time : "<<left_stamp.tv_usec<<endl;
-			//cout<<"right_time : "<<right_stamp.tv_usec<<endl<<endl;
-
-		}
-		else if(visensor_cam_selection==1)
-		{
-			visensor_imudata paired_imu=visensor_get_rightImg((char *)img_right.data,right_stamp);
-
-			// Display the timestamp of the synchronization data (in units of microseconds)
-			//cout<<"right_time : "<<right_stamp.tv_usec<<endl;
-			//cout<<"paired_imu time ===== "<<paired_imu.system_time.tv_usec<<endl<<endl;
-
-			cv_bridge::CvImage t_right=cv_bridge::CvImage(std_msgs::Header(), "mono8", img_right);
-
-			// 加时间戳
-			ros::Time msg1_time;
-			msg1_time.sec=right_stamp.tv_sec;
-			msg1_time.nsec=1000*right_stamp.tv_usec;
-			t_right.header.stamp = msg1_time;
-			t_right.header.seq=0;
-			t_right.header.frame_id = cam1Name;
-
-			msg1 = t_right.toImageMsg();
-
-			cameraInfo1Ptr->header = msg1->header;
-			pub1.publish(msg1, cameraInfo1Ptr);
-		}
-		else if(visensor_cam_selection==2)
-		{
-			visensor_imudata paired_imu=visensor_get_leftImg((char *)img_left.data,left_stamp);
-
-			// Display the timestamp of the synchronization data (in units of microseconds)
-			// cout<<"left_time : "<<left_stamp.tv_usec<<endl;
-			// cout<<"paired_imu time ===== "<<paired_imu.system_time.tv_usec<<endl<<endl;
-
-			cv_bridge::CvImage t_left=cv_bridge::CvImage(std_msgs::Header(), "mono8", img_left);
-
-			// Plus timestamp
-			ros::Time msg_time;
-			msg_time.sec=left_stamp.tv_sec;
-			msg_time.nsec=1000*left_stamp.tv_usec;
-			t_left.header.stamp = msg_time;
-			t_left.header.seq=0;
-			t_left.header.frame_id = cam0Name;
+                msg0 = t_left.toImageMsg();
 
 
-			msg0 = t_left.toImageMsg();
-
-
-			static_ct++;
-			if(static_ct>=5)
-			{
-				cameraInfo0Ptr->header = msg0->header;
-				pub0.publish(msg0, cameraInfo0Ptr);
-				static_ct=0;
-			}
-		}
+                static_ct++;
+                if(static_ct>=5)
+                {
+                    cameraInfo0Ptr->header = msg0->header;
+                    pub0.publish(msg0, cameraInfo0Ptr);
+                    static_ct=0;
+                }
+            }
+        }
 
 		ros::spinOnce();
 
