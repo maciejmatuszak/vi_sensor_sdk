@@ -217,7 +217,7 @@ int main(int argc, char **argv)
     }
     else
     {
-        publish_every_nth_image_ = static_cast<uint32_t>temp;
+        publish_every_nth_image_ = static_cast<uint32_t>(temp);
     }
 
 
@@ -292,7 +292,6 @@ int main(int argc, char **argv)
 
 	//Create imu_data_stream thread
 	pthread_t imu_data_thread;
-	int temp;
 	if(temp = pthread_create(&imu_data_thread, NULL, imu_data_stream, NULL))
 	printf("Failed to create thread imu_data_stream\r\n");
 
