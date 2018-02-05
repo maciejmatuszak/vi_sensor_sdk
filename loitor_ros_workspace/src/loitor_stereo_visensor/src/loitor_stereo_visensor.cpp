@@ -353,7 +353,7 @@ int main(int argc, char **argv)
                 ros::Time msg_time;
                 msg_time.sec=left_stamp.tv_sec;
                 msg_time.nsec=1000*left_stamp.tv_usec;
-                if(image_time_shift_ != 0.0)
+                if(image_time_shift_sec != 0.0)
                 {
                     ROS_INFO("TimeStamp before shift: %.6f", msg_time.toSec());
                     msg_time += imageTimeShiftDuration;
@@ -367,7 +367,7 @@ int main(int argc, char **argv)
                 ros::Time msg1_time;
                 msg1_time.sec=left_stamp.tv_sec;
                 msg1_time.nsec=1000*left_stamp.tv_usec;
-                if(image_time_shift_ != 0.0)
+                if(image_time_shift_sec != 0.0)
                 {
                     msg1_time += imageTimeShiftDuration;
                 }
@@ -407,7 +407,7 @@ int main(int argc, char **argv)
                 ros::Time msg1_time;
                 msg1_time.sec=right_stamp.tv_sec;
                 msg1_time.nsec=1000*right_stamp.tv_usec;
-                if(image_time_shift_ != 0.0)
+                if(image_time_shift_sec != 0.0)
                 {
                     ROS_INFO("TimeStamp before shift: %.6f", msg1_time.toSec());
                     msg1_time += imageTimeShiftDuration;
@@ -436,7 +436,7 @@ int main(int argc, char **argv)
                 ros::Time msg_time;
                 msg_time.sec=left_stamp.tv_sec;
                 msg_time.nsec=1000*left_stamp.tv_usec;
-                if(image_time_shift_ != 0.0)
+                if(image_time_shift_sec != 0.0)
                 {
                     ROS_INFO("TimeStamp before shift: %.6f", msg_time.toSec());
                     msg_time += imageTimeShiftDuration;
