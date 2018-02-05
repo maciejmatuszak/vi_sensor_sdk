@@ -205,6 +205,11 @@ int main(int argc, char **argv)
     float imu_rotation_q_y_ = -0.707106781187;
     float imu_rotation_q_z_ = 0.0;
 
+    double image_time_shift_sec = 0.0;
+    local_nh.param<double> ("image_time_shift_sec", image_time_shift_sec, image_time_shift_sec);
+    ros::Duration imageTimeShiftDuration(image_time_shift_sec);
+    ROS_INFO("Image Time Shift set to %.6f [sec]", imageTimeShiftDuration.toSec());
+
     uint32_t publish_every_nth_image_ = 1;
     int temp;
 
@@ -348,6 +353,13 @@ int main(int argc, char **argv)
                 ros::Time msg_time;
                 msg_time.sec=left_stamp.tv_sec;
                 msg_time.nsec=1000*left_stamp.tv_usec;
+                if(image_time_shift_ != 0.0)
+                {
+                    ROS_INFO("TimeStamp before shift: %.6f", msg_time.toSec());
+                    msg_time += imageTimeShiftDuration;
+                    ROS_INFO("TimeStamp after  shift: %f.6", msg_time.toSec());
+                }
+
                 t_left.header.stamp = msg_time;
                 t_left.header.seq=0;
                 t_left.header.frame_id=cam0Name;
@@ -355,6 +367,11 @@ int main(int argc, char **argv)
                 ros::Time msg1_time;
                 msg1_time.sec=left_stamp.tv_sec;
                 msg1_time.nsec=1000*left_stamp.tv_usec;
+                if(image_time_shift_ != 0.0)
+                {
+                    msg1_time += imageTimeShiftDuration;
+                }
+
                 t_right.header.stamp = msg1_time;
                 t_right.header.seq=0;
                 t_right.header.frame_id=cam1Name;
@@ -390,6 +407,12 @@ int main(int argc, char **argv)
                 ros::Time msg1_time;
                 msg1_time.sec=right_stamp.tv_sec;
                 msg1_time.nsec=1000*right_stamp.tv_usec;
+                if(image_time_shift_ != 0.0)
+                {
+                    ROS_INFO("TimeStamp before shift: %.6f", msg1_time.toSec());
+                    msg1_time += imageTimeShiftDuration;
+                    ROS_INFO("TimeStamp after  shift: %.6f", msg1_time.toSec());
+                }
                 t_right.header.stamp = msg1_time;
                 t_right.header.seq=0;
                 t_right.header.frame_id = cam1Name;
@@ -413,6 +436,12 @@ int main(int argc, char **argv)
                 ros::Time msg_time;
                 msg_time.sec=left_stamp.tv_sec;
                 msg_time.nsec=1000*left_stamp.tv_usec;
+                if(image_time_shift_ != 0.0)
+                {
+                    ROS_INFO("TimeStamp before shift: %.6f", msg_time.toSec());
+                    msg_time += imageTimeShiftDuration;
+                    ROS_INFO("TimeStamp after  shift: %.6f", msg_time.toSec());
+                }
                 t_left.header.stamp = msg_time;
                 t_left.header.seq=0;
                 t_left.header.frame_id = cam0Name;
