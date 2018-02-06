@@ -925,15 +925,13 @@ void *cam1_capture(void*)
     if(!visensor_resolution_status)camera_i2c_write(1,0x04,IMG_WIDTH_VGA);//HW
     else camera_i2c_write(1,0x04,IMG_WIDTH_WVGA);//HW
     switch (EG_mode) {
-
-    case 0: //Manual EG
-        camera_i2c_write(1,0xAF,0x00);//"AEC/AGC Enable" Manual/Manual
+    case 0:
+        camera_i2c_write(1,0xAF,0x00);//AEC
         camera_i2c_write(1,0x0B,man_exp);//Exposure Time
         camera_i2c_write(1,0x35,man_gain);//Gain
         break;
-
-    case 1: //Auto EG with limits
-        camera_i2c_write(1,0xAF,0x03);//AEC Auto/Auto
+    case 1:
+        camera_i2c_write(1,0xAF,0x03);//AEC
         camera_i2c_write(1,0xA5,auto_EG_des);//AEC
         camera_i2c_write(1,0xA6,0x01);//AEC
         camera_i2c_write(1,0xA8,0x00);//AEC
@@ -941,34 +939,23 @@ void *cam1_capture(void*)
         camera_i2c_write(1,0xAD,auto_EG_top);//AEC
         camera_i2c_write(1,0xAE,2);//AEC
         break;
-
-    case 2: //AutoE & ManG
+    case 2:
         camera_i2c_write(1,0xAF,0x01);//AEC
         camera_i2c_write(1,0xA5,auto_EG_des);//AEC
-        camera_i2c_write(1,0xA6,0x01);//AEC EXP. SKIP
-        camera_i2c_write(1,0xA8,0x00);//AEC EXP. LPF
-        camera_i2c_write(1,0xAC,auto_E_man_G_Ebottom);//AEC R0xAC (minimum coarse shutter width)
-        camera_i2c_write(1,0xAD,auto_E_man_G_Etop);//AEC R0xAD (maximum coarse shutter width)
+        camera_i2c_write(1,0xA6,0x01);//AEC
+        camera_i2c_write(1,0xA8,0x00);//AEC
+        camera_i2c_write(1,0xAC,auto_E_man_G_Ebottom);//AEC
+        camera_i2c_write(1,0xAD,auto_E_man_G_Etop);//AEC
         camera_i2c_write(1,0xAE,2);//AEC
-        camera_i2c_write(1,0x35,auto_E_man_G);// analog gain
+        camera_i2c_write(1,0x35,auto_E_man_G);//Gain
         break;
-    case 3: // Full Auto EG
+    case 3:
         break;
-    case 4: // ????
+    case 4:
         camera_i2c_write(1,0xA6,agc_aec_skip_frame);
         camera_i2c_write(1,0xA8,2);
         camera_i2c_write(1,0xA9,agc_aec_skip_frame);
         camera_i2c_write(1,0xAA,2);
-        break;
-    case 5: //AutoE & ManG
-        camera_i2c_write(1,0xAF,0x02);//AEC
-        camera_i2c_write(1,0xA5,auto_EG_des);//AEC
-        camera_i2c_write(1,0xA6,0x01);//AEC EXP. SKIP
-        camera_i2c_write(1,0xA8,0x00);//AEC EXP. LPF
-        camera_i2c_write(1,0xAC,auto_E_man_G_Ebottom);//AEC R0xAC (minimum coarse shutter width)
-        camera_i2c_write(1,0xAD,auto_E_man_G_Etop);//AEC R0xAD (maximum coarse shutter width)
-        camera_i2c_write(1,0xAE,2);//AEC
-        camera_i2c_write(1,0x35,auto_E_man_G);// analog gain
         break;
     default:
         break;
@@ -1089,16 +1076,6 @@ void *cam2_capture(void*)
         camera_i2c_write(2,0xA8,2);
         camera_i2c_write(2,0xA9,agc_aec_skip_frame);
         camera_i2c_write(2,0xAA,2);
-        break;
-    case 5: //AutoE & ManG
-        camera_i2c_write(2,0xAF,0x02);//AEC
-        camera_i2c_write(2,0xA5,auto_EG_des);//AEC
-        camera_i2c_write(2,0xA6,0x01);//AEC EXP. SKIP
-        camera_i2c_write(2,0xA8,0x00);//AEC EXP. LPF
-        camera_i2c_write(2,0xAC,auto_E_man_G_Ebottom);//AEC R0xAC (minimum coarse shutter width)
-        camera_i2c_write(2,0xAD,auto_E_man_G_Etop);//AEC R0xAD (maximum coarse shutter width)
-        camera_i2c_write(2,0xAE,2);//AEC
-        camera_i2c_write(2,0x35,auto_E_man_G);// analog gain
         break;
     default:
         break;
