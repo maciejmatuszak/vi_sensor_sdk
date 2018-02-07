@@ -205,11 +205,6 @@ int main(int argc, char **argv)
     float imu_rotation_q_y_ = -0.707106781187;
     float imu_rotation_q_z_ = 0.0;
 
-    double image_time_shift_sec = 0.0;
-    local_nh.param<double> ("image_time_shift_sec", image_time_shift_sec, image_time_shift_sec);
-    ros::Duration imageTimeShiftDuration(image_time_shift_sec);
-    ROS_INFO("Image Time Shift set to %.6f [sec]", imageTimeShiftDuration.toSec());
-
     uint32_t publish_every_nth_image_ = 1;
     int temp;
 
@@ -231,6 +226,24 @@ int main(int argc, char **argv)
 	local_nh.param<int> ("manual_gain", ros_manual_gain, ros_manual_gain);
 	local_nh.param<int> ("min_auto_exposure", ros_min_auto_exposure, ros_min_auto_exposure);
     local_nh.param<int> ("max_auto_exposure", ros_max_auto_exposure, ros_max_auto_exposure);
+
+
+    double image_time_shift_a = 0.0;
+    double image_time_shift_b = 0.0;
+    double image_time_shift_sec = 0.0;
+
+    local_nh.param<double> ("image_time_shift_a", image_time_shift_a, image_time_shift_a);
+
+    local_nh.param<double> ("image_time_shift_b", image_time_shift_b, image_time_shift_b);
+    if(image_time_shift_a != 0.0 || image_time_shift_b != 0.0 )
+    {
+        image_time_shift_sec = image_time_shift_a * ros_manual_exposure + image_time_shift_b;
+    }
+
+    //now we can override it by setting it directly
+    ros::Duration imageTimeShiftDuration(image_time_shift_sec);
+    ROS_INFO("Image Time Shift set to %.6f [sec]", imageTimeShiftDuration.toSec());
+
 
     local_nh.param<float> ("imu_rotation_q_w", imu_rotation_q_w_, imu_rotation_q_w_);
     local_nh.param<float> ("imu_rotation_q_x", imu_rotation_q_x_, imu_rotation_q_x_);

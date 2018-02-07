@@ -34,8 +34,10 @@
         <param name="imu_rotation_q_z"  type="double" value="0" />
 
         <!-- Camera timestamp fixed shift -->
-        <param name="image_time_shift_sec"  type="double" value="0.0" />
-
+        <!-- Time shift can be calculated by providing "a" and "b" component of linear equation: -->
+        <!-- timeshift = manual_exposure * image_time_shift_a + image_time_shift_b -->
+        <param name="image_time_shift_a"    type="double" value="0.0" />
+        <param name="image_time_shift_b"    type="double" value="0.0" />
     </node>
 
 </launch>
