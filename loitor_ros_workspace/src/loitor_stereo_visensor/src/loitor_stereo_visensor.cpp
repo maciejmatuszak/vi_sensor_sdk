@@ -51,6 +51,7 @@ void* imu_data_stream(void *)
 {
 	int counter=0;
 	imu_start_transfer=false;
+    ros::Time imu_last_time;
 
 
 	while((!visensor_Close_IMU_viewer)&&!imu_start_transfer)usleep(1000);
@@ -75,9 +76,17 @@ void* imu_data_stream(void *)
 			**/
 			sensor_msgs::Imu imu_msg;
 			imu_msg.header.frame_id = "/imu";
-			ros::Time imu_time;
-			imu_time.sec=visensor_imudata_pack.system_time.tv_sec;
-			imu_time.nsec=1000*visensor_imudata_pack.system_time.tv_usec;
+            ros::Time imu_time;
+            imu_time.sec=visensor_imudata_pack.system_time.tv_sec;
+            imu_time.nsec=1000*visensor_imudata_pack.system_time.tv_usec;
+
+            //to make sure there is no repeating timestamps add 1 micro second
+            if(imu_last_time == imu_time)
+            {
+                imu_time += ros::Duration(1.0e-6);
+            }
+            imu_last_time = imu_time;
+
 			imu_msg.header.stamp = imu_time;
 			imu_msg.header.seq=0;
 
