@@ -22,7 +22,7 @@ bool visensor_erase_imu_update();
 int visensor_set_opt(int fd,int nSpeed, int nBits, char nEvent, int nStop);
 int visensor_open_port(const char* dev_str);
 int visensor_get_imu_frame(int fd, unsigned char* imu_frame);
-int visensor_get_imu_data(unsigned char* imu_frame,short int* acc_offset, float* imu_rot_quot, visensor_imudata *imudata_struct,bool show_data);
+int visensor_get_imu_data(unsigned char* imu_frame,short int* acc_offset, float acc_scale, float* imu_rot_quot, visensor_imudata *imudata_struct,bool show_data);
 int visensor_send_imu_frame(int fd, unsigned char* data, int len);
 
 #endif

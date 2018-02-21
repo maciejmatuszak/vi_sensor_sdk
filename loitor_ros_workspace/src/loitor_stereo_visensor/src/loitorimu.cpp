@@ -298,7 +298,7 @@ int q_rotvec(float* q,float* rin,float* rout)
 }
 
 
-int visensor_get_imu_data(unsigned char* imu_frame,short int* acc_offset, float* imu_rot_quot,visensor_imudata *imudata_struct,bool show_data=false)
+int visensor_get_imu_data(unsigned char* imu_frame,short int* acc_offset, float acc_scale, float* imu_rot_quot,visensor_imudata *imudata_struct,bool show_data=false)
 {
 
     imudata_struct->imu_time=imu_time;
@@ -346,7 +346,12 @@ int visensor_get_imu_data(unsigned char* imu_frame,short int* acc_offset, float*
         (float)(imu_data[4]-acc_offset[1]),
         (float)(imu_data[5]-acc_offset[2])};
 
-    //convert raw acceleration to [g] (I think so...)
+    //apply acceleration scale
+    facc_nobias[0] *= acc_scale;
+    facc_nobias[1] *= acc_scale;
+    facc_nobias[2] *= acc_scale;
+
+    //convert raw acceleration to [m/s^2] (I think so...)
     temp_v3_in[0] =  1.0*facc_nobias[0]/16384*9.81;
     temp_v3_in[1] =  1.0*facc_nobias[1]/16384*9.81;
     temp_v3_in[2] =  1.0*facc_nobias[2]/16384*9.81;

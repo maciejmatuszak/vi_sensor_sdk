@@ -108,6 +108,7 @@ int VI_FIFO_matcher;
 double imu_acc_bias_X;
 double imu_acc_bias_Y;
 double imu_acc_bias_Z;
+double imu_acc_scale;
 float imu_rotation_q_w;
 float imu_rotation_q_x;
 float imu_rotation_q_y;
@@ -398,6 +399,13 @@ void visensor_load_settings(const char* settings_file)
         std::getline(iss_line, token, ',');
         istringstream(token)>>imu_acc_bias_Z;
     }
+    {
+        istringstream iss_line(settingsList.at(31));
+        //The first word, ignore
+        std::getline(iss_line, token, ',');
+        std::getline(iss_line, token, ',');
+        istringstream(token)>>imu_acc_scale;
+    }
 
     // show settings
     cout<<endl<<"data_mode : "<<data_mode<<endl;
@@ -422,6 +430,7 @@ void visensor_load_settings(const char* settings_file)
     cout<<"imu_acc_bias_X :  "<<imu_acc_bias_X<<endl;
     cout<<"imu_acc_bias_Y :  "<<imu_acc_bias_Y<<endl;
     cout<<"imu_acc_bias_Z :  "<<imu_acc_bias_Z<<endl;
+    cout<<"imu_acc_scale :  "<<imu_acc_scale<<endl;
     cout<<"imu_port_name :  "<<imu_port_name<<endl<<endl;
 
     // 预设模式+手动模式
@@ -694,8 +703,9 @@ void visensor_save_current_settings()
     f<<imu_port_name<<","<<VI_FIFO_matcher<<endl<<"#"<<endl<<"IMU-acc-bias"<<endl;
     f<<"Gx,"<<imu_acc_bias_X<<endl;
     f<<"Gy,"<<imu_acc_bias_Y<<endl;
-
-    f<<"Gz,"<<imu_acc_bias_Z<<endl<<"#"<<endl;
+    f<<"Gz,"<<imu_acc_bias_Z<<endl;
+    f<<"Gscale,"<<imu_acc_scale<<endl;
+    f<<"#"<<endl;
 
     f.close();
 }
@@ -1620,6 +1630,7 @@ void *imu_data_feed(void*)
     short int biasY=(short int)imu_acc_bias_Y;
     short int biasZ=(short int)imu_acc_bias_Z;
     short int setaccoffset[3] = {biasX,  biasY, biasZ};
+    float setaccscale = (float)imu_acc_scale;
     //rotation quoternion w, x, ,y, z
     float imu_rot_quoternion[4] = {imu_rotation_q_w, imu_rotation_q_x, imu_rotation_q_y, imu_rotation_q_z};
     printf("  IMU ROT Quat: %11f,%11f,%11f,%11f\r\n",imu_rot_quoternion[0],imu_rot_quoternion[1],imu_rot_quoternion[2],imu_rot_quoternion[3]);
@@ -1651,7 +1662,7 @@ void *imu_data_feed(void*)
     {
         if(visensor_get_imu_frame(imu_fd,imu_frame)==0)
         {
-            visensor_get_imu_data(imu_frame,setaccoffset, imu_rot_quoternion, &visensor_imudata_pack,false);
+            visensor_get_imu_data(imu_frame,setaccoffset, setaccscale, imu_rot_quoternion, &visensor_imudata_pack,false);
             // 将imu更新标记打开
             visensor_mark_imu_update();
 
