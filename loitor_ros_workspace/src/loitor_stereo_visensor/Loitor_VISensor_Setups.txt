@@ -35,4 +35,5 @@ IMU-acc-bias
 Gx,758
 Gy,-2
 Gz,-2608
+Gscale,1.0
 #
