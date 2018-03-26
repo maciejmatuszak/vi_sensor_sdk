@@ -36,6 +36,10 @@ geometry_msgs::Vector3 imu_acc_data[imu_acc_N];
 double acceleration_scale = 1.0;
 double acc_stat_variance_threshold = 0.002;
 
+std::string camera_frame_id = "/loitor_camera";
+std::string imu_frame_id = "/loitor_imu";
+
+
 /*
 *  Used to construct the left and right eye images of cv :: Mat
 */
@@ -98,7 +102,7 @@ void* imu_data_stream(void *)
             }
             **/
             sensor_msgs::Imu imu_msg;
-            imu_msg.header.frame_id = "/imu";
+            imu_msg.header.frame_id = imu_frame_id;
             ros::Time imu_time;
             imu_time.sec=visensor_imudata_pack.system_time.tv_sec;
             imu_time.nsec=1000*visensor_imudata_pack.system_time.tv_usec;
@@ -185,13 +189,13 @@ void* imu_data_stream(void *)
 
 
 
-void loadIntrinsicsFile(string config_file_path, string &camera_name, sensor_msgs::CameraInfoPtr cam_info)
+void loadIntrinsicsFile(string config_file_path, string &frame_id, sensor_msgs::CameraInfoPtr cam_info)
 {
 
-    if (camera_calibration_parsers::readCalibration (config_file_path, camera_name, *cam_info))
+    if (camera_calibration_parsers::readCalibration (config_file_path, frame_id, *cam_info))
     {
-        cam_info->header.frame_id = "/" + camera_name;
-        ROS_INFO_STREAM ("Loaded intrinsics parameters for [" << camera_name << "]");
+        cam_info->header.frame_id = frame_id;
+        ROS_INFO_STREAM ("Loaded intrinsics parameters for [" << frame_id << "]");
     }
 }
 
@@ -207,11 +211,11 @@ bool saveIntrinsicsFile(string config_file_path, string &camera_name, sensor_msg
 }
 
 
-bool setCamInfo (sensor_msgs::SetCameraInfo::Request &req, sensor_msgs::SetCameraInfo::Response &rsp , string config_file_path, string &camera_name, sensor_msgs::CameraInfoPtr cam_info )
+bool setCamInfo (sensor_msgs::SetCameraInfo::Request &req, sensor_msgs::SetCameraInfo::Response &rsp , string config_file_path, string &frame_id, sensor_msgs::CameraInfoPtr cam_info )
 {
     *cam_info = req.camera_info;
-    cam_info->header.frame_id = "/" + camera_name;
-    rsp.success = saveIntrinsicsFile(config_file_path, camera_name, cam_info);
+    cam_info->header.frame_id = frame_id;
+    rsp.success = saveIntrinsicsFile(config_file_path, frame_id, cam_info);
     rsp.status_message = (rsp.success) ?
                          "successfully wrote camera info to file" :
                          "failed to write camera info to file";
@@ -236,6 +240,8 @@ int main(int argc, char **argv)
 
     local_nh.param<string> ("config_path", configPath, configPath);
     local_nh.param<string> ("camera_id", camera_id, camera_id);
+    local_nh.param<string> ("camera_frame_id", camera_frame_id, camera_frame_id);
+    local_nh.param<string> ("imu_frame_id", imu_frame_id, imu_frame_id);
     local_nh.param<string> ("config_file", configFile, configFile);
 
     local_nh.param<double> ("latitude_deg", latitude_deg, latitude_deg);
@@ -280,8 +286,8 @@ int main(int argc, char **argv)
     string cam1Name = "right";
 
 
-    loadIntrinsicsFile(cam0IntrinsicFilePath, cam0Name, cameraInfo0Ptr);
-    loadIntrinsicsFile(cam1IntrinsicFilePath, cam1Name, cameraInfo1Ptr);
+    loadIntrinsicsFile(cam0IntrinsicFilePath, camera_frame_id, cameraInfo0Ptr);
+    loadIntrinsicsFile(cam1IntrinsicFilePath, camera_frame_id, cameraInfo1Ptr);
     visensor_load_settings((settingsPathB / configFile).string().c_str());
 
 
@@ -468,7 +474,7 @@ int main(int argc, char **argv)
 
                 t_left.header.stamp = msg_time;
                 t_left.header.seq=0;
-                t_left.header.frame_id=cam0Name;
+                t_left.header.frame_id=camera_frame_id;
 
                 ros::Time msg1_time;
                 msg1_time.sec=left_stamp.tv_sec;
@@ -480,7 +486,7 @@ int main(int argc, char **argv)
 
                 t_right.header.stamp = msg1_time;
                 t_right.header.seq=0;
-                t_right.header.frame_id=cam1Name;
+                t_right.header.frame_id=camera_frame_id;
 
                 msg0 = t_left.toImageMsg();
                 msg1 = t_right.toImageMsg();
@@ -521,7 +527,7 @@ int main(int argc, char **argv)
                 }
                 t_right.header.stamp = msg1_time;
                 t_right.header.seq=0;
-                t_right.header.frame_id = cam1Name;
+                t_right.header.frame_id = camera_frame_id;
 
                 msg1 = t_right.toImageMsg();
 
@@ -550,7 +556,7 @@ int main(int argc, char **argv)
                 }
                 t_left.header.stamp = msg_time;
                 t_left.header.seq=0;
-                t_left.header.frame_id = cam0Name;
+                t_left.header.frame_id = camera_frame_id;
 
 
                 msg0 = t_left.toImageMsg();
