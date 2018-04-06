@@ -286,8 +286,8 @@ int main(int argc, char **argv)
     string cam1Name = "right";
 
 
-    loadIntrinsicsFile(cam0IntrinsicFilePath, camera_frame_id, cameraInfo0Ptr);
-    loadIntrinsicsFile(cam1IntrinsicFilePath, camera_frame_id, cameraInfo1Ptr);
+    loadIntrinsicsFile(cam0IntrinsicFilePath, cam0Name, cameraInfo0Ptr);
+    loadIntrinsicsFile(cam1IntrinsicFilePath, cam1Name, cameraInfo1Ptr);
     visensor_load_settings((settingsPathB / configFile).string().c_str());
 
 
