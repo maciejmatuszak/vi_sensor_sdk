@@ -26,7 +26,9 @@ include_directories(
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
 
-find_package(OpenCV REQUIRED)
+find_package(OpenCV REQUIRED
+  PATHS /usr/local_ros
+  NO_DEFAULT_PATH)
 
 include_directories(include 
 ${catkin_INCLUDE_DIRS}  
