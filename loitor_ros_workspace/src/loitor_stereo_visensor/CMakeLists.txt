@@ -10,6 +10,7 @@ find_package(catkin REQUIRED COMPONENTS
   camera_calibration_parsers
   message_generation
   sensor_msgs
+  diagnostic_updater
 )
 
 catkin_package(

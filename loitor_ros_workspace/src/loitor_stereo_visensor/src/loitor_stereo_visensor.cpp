@@ -6,7 +6,8 @@
 #include <sensor_msgs/Imu.h>
 #include <sensor_msgs/CameraInfo.h>
 #include <sensor_msgs/SetCameraInfo.h>
-
+#include <diagnostic_updater/diagnostic_updater.h>
+#include <diagnostic_updater/publisher.h>
 # include <boost/filesystem.hpp>
 #include <cv.h>
 #include <highgui.h>
@@ -24,12 +25,16 @@
 
 #include <sstream>
 
+#include <diagnostic_updater/update_functions.h>
+
 
 using namespace std;
 using namespace cv;
 
 
 ros::Publisher pub_imu;
+diagnostic_updater::TopicDiagnostic *pub_imu_diagPtr;
+
 const uint32_t imu_acc_N = 2000;
 uint32_t imu_acc_data_index = 0;
 geometry_msgs::Vector3 imu_acc_data[imu_acc_N];
@@ -140,6 +145,7 @@ void* imu_data_stream(void *)
             imu_msg.linear_acceleration.z *= acceleration_scale;
 
             pub_imu.publish(imu_msg);
+            pub_imu_diagPtr->tick(imu_msg.header.stamp);
 
 
             geometry_msgs::Vector3 avg_acc;
@@ -223,11 +229,35 @@ bool setCamInfo (sensor_msgs::SetCameraInfo::Request &req, sensor_msgs::SetCamer
 }
 
 
+void dummy_diagnostic(diagnostic_updater::DiagnosticStatusWrapper &stat)
+{
+  // DiagnosticStatusWrapper are a derived class of
+  // diagnostic_msgs::DiagnosticStatus provides a set of convenience
+  // methods.
+
+  // summary and summaryf set the level and message.
+    stat.summaryf(diagnostic_msgs::DiagnosticStatus::ERROR, "Buckle your seat belt. Launch in %f seconds!", 10);
+
+  // add and addf are used to append key-value pairs.
+  stat.add("Diagnostic Name", "dummy");
+  // add transparently handles conversion to string (using a string_stream).
+  stat.add("Time to Launch", 10);
+  // addf allows arbitrary printf style formatting.
+  stat.addf("Geeky thing to say", "The square of the time to launch %f is %f",
+      10, 10 * 10);
+}
+
+
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "loitor_stereo_visensor");
 
     ros::NodeHandle local_nh("~");
+
+    // The Updater class advertises to /diagnostics, and has a
+    // ~diagnostic_period parameter that says how often the diagnostics
+    // should be published.
+    diagnostic_updater::Updater updater;
 
     string configPath= "";
     std::string camera_id = "LTR000";
@@ -249,6 +279,11 @@ int main(int argc, char **argv)
     local_nh.param<double> ("acc_stat_variance_threshold", acc_stat_variance_threshold, acc_stat_variance_threshold);
 
     setLocation(height_masl, latitude_deg);
+    updater.setHardwareID(camera_id);
+    updater.add("Function updater", dummy_diagnostic);
+
+    updater.broadcast(0, "Doing important initialization stuff.");
+
 
     ROS_INFO_STREAM("Config path:" << configPath);
     ROS_INFO_STREAM("Camera id:" << camera_id);
@@ -417,6 +452,13 @@ int main(int argc, char **argv)
     // imu publisher
     pub_imu = local_nh.advertise<sensor_msgs::Imu>("imu0", 200);
 
+    double min_freq = 10.0; // If you update these values, the
+    double max_freq = 100.0; // HeaderlessTopicDiagnostic will use the new values.
+    pub_imu_diagPtr = new diagnostic_updater::TopicDiagnostic("imu0", updater,
+        diagnostic_updater::FrequencyStatusParam(&min_freq, &max_freq, 0.1, 100),
+        diagnostic_updater::TimeStampStatusParam());
+
+
     // publish to those two topic
     image_transport::ImageTransport it(local_nh);
     image_transport::CameraPublisher pub0 = it.advertiseCamera(cam0Name + "/image_raw", 1);
@@ -573,10 +615,12 @@ int main(int argc, char **argv)
         }
 
         ros::spinOnce();
+        updater.update();
 
         loop_rate.sleep();
 
     }
+    delete pub_imu_diagPtr;
 
     /* shut-down viewers */
     visensor_Close_IMU_viewer=true;
