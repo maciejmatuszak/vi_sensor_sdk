@@ -34,6 +34,8 @@ using namespace cv;
 
 ros::Publisher pub_imu;
 diagnostic_updater::TopicDiagnostic *pub_imu_diagPtr;
+diagnostic_updater::TopicDiagnostic *pub_cam0_diagPtr;
+diagnostic_updater::TopicDiagnostic *pub_cam1_diagPtr;
 
 const uint32_t imu_acc_N = 2000;
 uint32_t imu_acc_data_index = 0;
@@ -229,25 +231,6 @@ bool setCamInfo (sensor_msgs::SetCameraInfo::Request &req, sensor_msgs::SetCamer
 }
 
 
-void dummy_diagnostic(diagnostic_updater::DiagnosticStatusWrapper &stat)
-{
-  // DiagnosticStatusWrapper are a derived class of
-  // diagnostic_msgs::DiagnosticStatus provides a set of convenience
-  // methods.
-
-  // summary and summaryf set the level and message.
-    stat.summaryf(diagnostic_msgs::DiagnosticStatus::ERROR, "Buckle your seat belt. Launch in %f seconds!", 10);
-
-  // add and addf are used to append key-value pairs.
-  stat.add("Diagnostic Name", "dummy");
-  // add transparently handles conversion to string (using a string_stream).
-  stat.add("Time to Launch", 10);
-  // addf allows arbitrary printf style formatting.
-  stat.addf("Geeky thing to say", "The square of the time to launch %f is %f",
-      10, 10 * 10);
-}
-
-
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "loitor_stereo_visensor");
@@ -280,9 +263,8 @@ int main(int argc, char **argv)
 
     setLocation(height_masl, latitude_deg);
     updater.setHardwareID(camera_id);
-    updater.add("Function updater", dummy_diagnostic);
 
-    updater.broadcast(0, "Doing important initialization stuff.");
+    updater.broadcast(diagnostic_msgs::DiagnosticStatus::OK, "LOITOR Camera is initialising...");
 
 
     ROS_INFO_STREAM("Config path:" << configPath);
@@ -430,7 +412,7 @@ int main(int argc, char **argv)
         img_left.data=new unsigned char[IMG_WIDTH_WVGA*IMG_HEIGHT_WVGA];
         img_right.data=new unsigned char[IMG_WIDTH_WVGA*IMG_HEIGHT_WVGA];
     }
-    float hardware_fps=visensor_get_hardware_fps();
+    double hardware_fps=visensor_get_hardware_fps();
     /************************** Start IMU **************************/
     int fd=visensor_Start_IMU();
     if(fd<0)
@@ -452,10 +434,9 @@ int main(int argc, char **argv)
     // imu publisher
     pub_imu = local_nh.advertise<sensor_msgs::Imu>("imu0", 200);
 
-    double min_freq = 10.0; // If you update these values, the
-    double max_freq = 100.0; // HeaderlessTopicDiagnostic will use the new values.
+    double imu_freq = 200.0; // If you update these values, the
     pub_imu_diagPtr = new diagnostic_updater::TopicDiagnostic("imu0", updater,
-        diagnostic_updater::FrequencyStatusParam(&min_freq, &max_freq, 0.1, 100),
+        diagnostic_updater::FrequencyStatusParam(&imu_freq, &imu_freq, 0.1, 100),
         diagnostic_updater::TimeStampStatusParam());
 
 
@@ -470,6 +451,15 @@ int main(int argc, char **argv)
 
     // Use the camera hardware frame rate to set the publishing frequency
     ros::Rate loop_rate((int)hardware_fps);
+
+
+    pub_cam0_diagPtr = new diagnostic_updater::TopicDiagnostic(cam0Name + "/image_raw", updater,
+        diagnostic_updater::FrequencyStatusParam(&hardware_fps, &hardware_fps, 0.1, 10),
+        diagnostic_updater::TimeStampStatusParam());
+    pub_cam1_diagPtr = new diagnostic_updater::TopicDiagnostic(cam1Name + "/image_raw", updater,
+        diagnostic_updater::FrequencyStatusParam(&hardware_fps, &hardware_fps, 0.1, 10),
+        diagnostic_updater::TimeStampStatusParam());
+
 
     int static_ct=0;
     uint32_t running_counter = 0;
@@ -539,6 +529,8 @@ int main(int argc, char **argv)
                     cameraInfo1Ptr->header = msg1->header;
                     pub0.publish(msg0, cameraInfo0Ptr);
                     pub1.publish(msg1, cameraInfo1Ptr);
+                    pub_cam0_diagPtr->tick(msg0->header.stamp);
+                    pub_cam1_diagPtr->tick(msg1->header.stamp);
                     static_ct=0;
                 }
 
@@ -575,6 +567,8 @@ int main(int argc, char **argv)
 
                 cameraInfo1Ptr->header = msg1->header;
                 pub1.publish(msg1, cameraInfo1Ptr);
+                pub_cam1_diagPtr->tick(msg1->header.stamp);
+
             }
             else if(visensor_cam_selection==2)
             {
@@ -609,6 +603,7 @@ int main(int argc, char **argv)
                 {
                     cameraInfo0Ptr->header = msg0->header;
                     pub0.publish(msg0, cameraInfo0Ptr);
+                    pub_cam0_diagPtr->tick(msg0->header.stamp);
                     static_ct=0;
                 }
             }
@@ -621,6 +616,8 @@ int main(int argc, char **argv)
 
     }
     delete pub_imu_diagPtr;
+    delete pub_cam0_diagPtr;
+    delete pub_cam1_diagPtr;
 
     /* shut-down viewers */
     visensor_Close_IMU_viewer=true;
