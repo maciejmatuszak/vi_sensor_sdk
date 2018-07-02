@@ -453,11 +453,12 @@ int main(int argc, char **argv)
     ros::Rate loop_rate((int)hardware_fps);
 
 
+    double actual_fps = hardware_fps / publish_every_nth_image_;
     pub_cam0_diagPtr = new diagnostic_updater::TopicDiagnostic(cam0Name + "/image_raw", updater,
-        diagnostic_updater::FrequencyStatusParam(&hardware_fps, &hardware_fps, 0.1, 10),
+        diagnostic_updater::FrequencyStatusParam(&actual_fps, &actual_fps, 0.1, 10),
         diagnostic_updater::TimeStampStatusParam());
     pub_cam1_diagPtr = new diagnostic_updater::TopicDiagnostic(cam1Name + "/image_raw", updater,
-        diagnostic_updater::FrequencyStatusParam(&hardware_fps, &hardware_fps, 0.1, 10),
+        diagnostic_updater::FrequencyStatusParam(&actual_fps, &actual_fps, 0.1, 10),
         diagnostic_updater::TimeStampStatusParam());
 
 
