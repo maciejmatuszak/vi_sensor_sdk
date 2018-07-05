@@ -454,10 +454,10 @@ int main(int argc, char **argv)
 
 
     double actual_fps = hardware_fps / publish_every_nth_image_;
-    pub_cam0_diagPtr = new diagnostic_updater::TopicDiagnostic(cam0Name + "/image_raw", updater,
+    pub_cam0_diagPtr = new diagnostic_updater::TopicDiagnostic(cam0Name, updater,
         diagnostic_updater::FrequencyStatusParam(&actual_fps, &actual_fps, 0.1, 10),
         diagnostic_updater::TimeStampStatusParam());
-    pub_cam1_diagPtr = new diagnostic_updater::TopicDiagnostic(cam1Name + "/image_raw", updater,
+    pub_cam1_diagPtr = new diagnostic_updater::TopicDiagnostic(cam1Name, updater,
         diagnostic_updater::FrequencyStatusParam(&actual_fps, &actual_fps, 0.1, 10),
         diagnostic_updater::TimeStampStatusParam());
 
