@@ -183,7 +183,7 @@ void* imu_data_stream(void *)
             {
 
                 acceleration_scale = gravity_magnitude_ / avg_acc_mag;
-                ROS_INFO_THROTTLE(0.2, "STATIONARY Gravity adjustment: AVG:%f; DESIRED: %f; SCALE: %f; VARIANCE: %f", avg_acc_mag, gravity_magnitude_, acceleration_scale, avg_acc_var_mag);
+                ROS_DEBUG_THROTTLE(0.2, "STATIONARY Gravity adjustment: AVG:%f; DESIRED: %f; SCALE: %f; VARIANCE: %f", avg_acc_mag, gravity_magnitude_, acceleration_scale, avg_acc_var_mag);
             }
             else
             {
